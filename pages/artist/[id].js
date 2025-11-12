@@ -1,4 +1,4 @@
-import { uimport { useRouter } from "next/router";
+import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
 import { supabase } from "../../lib/supabaseClient";
 import Navbar from "../../components/Navbar";
@@ -17,44 +17,34 @@ export default function ArtistPage() {
     async function loadData() {
       setLoading(true);
       try {
-        // Fetch artist profile
-        const { data: profile, error: profileError } = await supabase
+        const { data: profile } = await supabase
           .from("profiles")
           .select("id, name, bio, avatar_path, verified, avg_rating")
           .eq("id", id)
           .single();
-
-        if (profileError) console.error(profileError);
         setArtist(profile);
 
-        // Fetch approved artworks
-        const { data: arts, error: artsError } = await supabase
+        const { data: arts } = await supabase
           .from("artworks")
           .select("id, title, storage_path, created_at")
           .eq("artist_id", id)
           .eq("approved", true)
           .order("created_at", { ascending: false });
-
-        if (artsError) console.error(artsError);
         setArtworks(arts || []);
 
-        // Fetch reviews
-        const { data: revs, error: revError } = await supabase
+        const { data: revs } = await supabase
           .from("reviews")
           .select("id, rating, comment, created_at, customer_id")
           .eq("artist_id", id)
           .order("created_at", { ascending: false })
           .limit(20);
-
-        if (revError) console.error(revError);
         setReviews(revs || []);
       } catch (err) {
-        console.error("Unexpected error:", err);
+        console.error(err);
       } finally {
         setLoading(false);
       }
     }
-
     loadData();
   }, [id]);
 
@@ -76,7 +66,7 @@ export default function ArtistPage() {
       <>
         <Navbar />
         <div className="max-w-6xl mx-auto p-6">
-          <p className="text-red-600">Artist not found or data missing.</p>
+          <p className="text-red-600">Artist not found.</p>
         </div>
       </>
     );
@@ -168,4 +158,4 @@ export default function ArtistPage() {
       </div>
     </>
   );
-}￼Enter
+}
