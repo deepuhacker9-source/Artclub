@@ -7,6 +7,7 @@ export default function Navbar() {
         <Link href="/"><span className="font-bold text-xl text-pink-700">Art Club</span></Link>
         <div className="flex gap-4 font-medium text-gray-700">
           <Link href="/request">Request</Link>
+          <Link href="/login">Login</Link>
           <Link href="/track">Track</Link>
           <Link href="/artists">Artists</Link>
         </div>
