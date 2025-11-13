@@ -7,37 +7,44 @@ export const config = {
 };
 
 export default async function handler(req, res) {
-  const form = formidable({ multiples: false });
+  if (req.method !== "POST") return res.status(405).json({ error: "Method not allowed" });
 
+  const form = new formidable.IncomingForm();
   form.parse(req, async (err, fields, files) => {
     if (err) return res.status(500).json({ error: "Form parse error" });
 
-    const file = files.photo?.[0];
-    if (!file) return res.status(400).json({ error: "No file uploaded" });
+    const file = files.photo;
+    let storagePath = null;
+    if (file) {
+      const f = Array.isArray(file) ? file[0] : file;
+      try {
+        const buffer = fs.readFileSync(f.filepath);
+        const fileName = `${Date.now()}_${(f.originalFilename || "upload").replace(/\s+/g, "_")}`;
+        const { data, error: upErr } = await supabase.storage.from("artworks").upload(fileName, buffer, { contentType: f.mimetype, upsert: false });
+        if (upErr) return res.status(500).json({ error: upErr.message });
+        storagePath = data.path || fileName;
+      } catch (e) {
+        console.error(e);
+        return res.status(500).json({ error: "File processing failed" });
+      }
+    }
 
-    // Upload file to Supabase Storage
-    const fileName = `${Date.now()}_${file.originalFilename}`;
-    const fileBuffer = fs.readFileSync(file.filepath);
-
-    const { data, error } = await supabase.storage
-      .from("requests")
-      .upload(fileName, fileBuffer, { contentType: file.mimetype });
-
-    if (error) return res.status(500).json({ error: error.message });
-
-    // Insert request record into database
-    const { error: insertError } = await supabase.from("requests").insert({
-      name: fields.name,
-      email: fields.email,
-      event_date: fields.event_date,
-      address: fields.address,
-      notes: fields.notes,
-      storage_path: data.path, // ✅ file path inserted properly
+    const insertPayload = {
+      name: fields.name || null,
+      email: fields.email || null,
+      event_date: fields.event_date || null,
+      address: fields.address || null,
+      notes: fields.notes || null,
+      storage_path: storagePath,
       status: "pending",
-    });
+      price: fields.price ? Number(fields.price) : undefined,
+    };
 
+    if (fields.customer_id) insertPayload.customer_id = fields.customer_id;
+
+    const { error: insertError } = await supabase.from("requests").insert(insertPayload);
     if (insertError) return res.status(500).json({ error: insertError.message });
 
-    res.status(200).json({ message: "Request submitted successfully!" });
+    return res.status(200).json({ message: "Request submitted successfully" });
   });
 }
