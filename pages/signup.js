@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { supabase } from "../lib/supabaseClient";
 import { useRouter } from "next/router";
+import Navbar from "../components/Navbar";
 
 export default function Signup() {
   const router = useRouter();
@@ -11,86 +12,48 @@ export default function Signup() {
 
   const signupEmail = async () => {
     setMsg("");
-
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
-      options: {
-        data: { full_name: name }
-      }
+      options: { data: { full_name: name } }
     });
-
     if (error) return setMsg(error.message);
-
-    // Create profile
-    await supabase.from("profiles").upsert({
-      id: data.user.id,
-      auth_id: data.user.id,
-      name: name,
-      email: email,
-      role: "customer"
-    });
-
+    // upsert profile (safe)
+    if (data?.user?.id) {
+      await supabase.from("profiles").upsert({
+        id: data.user.id,
+        auth_id: data.user.id,
+        name,
+        email,
+        role: "customer"
+      });
+    }
     router.push("/");
   };
 
   const signupGoogle = async () => {
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
-      options: {
-        redirectTo: "https://artclub-7yis24o4a-deepaks-projects-e5f3ec48.vercel.app"
-      }
+      options: { redirectTo: process.env.NEXT_PUBLIC_APP_URL }
     });
-    if (error) alert(error.message);
+    if (error) setMsg(error.message);
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100">
-      <div className="bg-white p-8 rounded-lg shadow w-96">
-        <h1 className="text-2xl font-semibold mb-6 text-center">Create Account</h1>
-
-        <input
-          type="text"
-          placeholder="Full Name"
-          className="w-full p-3 border rounded mb-3"
-          onChange={(e) => setName(e.target.value)}
-        />
-
-        <input
-          type="email"
-          placeholder="Email"
-          className="w-full p-3 border rounded mb-3"
-          onChange={(e) => setEmail(e.target.value)}
-        />
-
-        <input
-          type="password"
-          placeholder="Password"
-          className="w-full p-3 border rounded mb-6"
-          onChange={(e) => setPassword(e.target.value)}
-        />
-
-        <button
-          onClick={signupEmail}
-          className="w-full bg-black text-white py-3 rounded mb-4"
-        >
-          Sign Up
-        </button>
-
-        <button
-          onClick={signupGoogle}
-          className="w-full bg-red-600 text-white py-3 rounded mb-4"
-        >
-          Continue with Google
-        </button>
-
-        {msg && <p className="text-red-600 text-center">{msg}</p>}
-
-        <p className="text-center mt-4">
-          Already have an account?{" "}
-          <a href="/login" className="text-pink-700 font-medium">Login</a>
-        </p>
+    <>
+      <Navbar />
+      <div className="min-h-screen flex items-center justify-center bg-[var(--bg)]">
+        <div className="bg-white p-8 rounded-lg shadow w-96">
+          <h1 className="text-2xl font-semibold mb-6 text-center">Create Account</h1>
+          <input className="w-full p-3 border rounded mb-3" placeholder="Full name" value={name} onChange={(e)=>setName(e.target.value)} />
+          <input className="w-full p-3 border rounded mb-3" placeholder="Email" value={email} onChange={(e)=>setEmail(e.target.value)} />
+          <input className="w-full p-3 border rounded mb-6" type="password" placeholder="Password" value={password} onChange={(e)=>setPassword(e.target.value)} />
+          <button onClick={signupEmail} className="w-full px-4 py-3 rounded shadow-md" style={{ background: "#C56A47", color: "#fff" }}>Sign up</button>
+          <button onClick={signupGoogle} className="w-full mt-3 px-4 py-3 rounded border">Continue with Google</button>
+          {msg && <p className="text-red-600 mt-3">{msg}</p>}
+          <p className="text-center mt-4">Already have an account? <a href="/login" className="text-pink-700">Login</a></p>
+        </div>
       </div>
-    </div>
+    </>
   );
 }
