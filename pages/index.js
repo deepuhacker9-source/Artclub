@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { supabase } from "../utils/supabase";
+import { supabase } from "../lib/supabaseClient";
 
 export default function Home({ artworks }) {
   return (
