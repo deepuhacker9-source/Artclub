@@ -1,54 +1,79 @@
 import Link from "next/link";
-import { supabase } from "../lib/supabaseClient";
+import { supabase } from "../utils/supabase";
 
-export default function Home() {
+export default function Home({ artworks }) {
   return (
-    <div className="min-h-screen bg-[#f5ede4]">
-      {/* Hero Section */}
-      <section className="text-center px-6 pt-16 pb-12">
-        <h1 className="text-4xl sm:text-5xl font-bold text-[#4a332e] leading-tight">
+    <div className="min-h-screen bg-[#f2e8dc] text-[#4a3f35]">
+      <div className="max-w-4xl mx-auto px-6 py-16 text-center">
+
+        {/* Title */}
+        <h1 className="text-5xl font-bold mb-4">
           Frame your memories
         </h1>
 
-        <p className="mt-4 text-lg text-[#6b524b] max-w-xl mx-auto">
+        {/* Subtitle */}
+        <p className="text-lg text-gray-700 max-w-2xl mx-auto">
           A place where talented artists turn your photos into timeless portraits.
         </p>
 
-        {/* CTA Buttons */}
-        <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mt-8">
+        {/* FIXED BUTTONS (NO OVERLAP) */}
+        <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4">
           <Link
             href="/request"
-            className="px-8 py-3 rounded-full bg-[#c66c42] text-white font-medium shadow hover:bg-[#b65e39] transition"
+            className="bg-[#C96A46] text-white px-8 py-3 rounded-full text-lg font-medium shadow-md w-full sm:w-auto text-center"
           >
             Request a Portrait
           </Link>
 
           <Link
             href="/track"
-            className="px-8 py-3 rounded-full border border-[#c66c42] text-[#c66c42] font-medium hover:bg-[#f3e5dd] transition"
+            className="border border-[#C96A46] text-[#C96A46] px-8 py-3 rounded-full text-lg font-medium w-full sm:w-auto text-center"
           >
             Track Order
           </Link>
+        </div>
 
-          <Link
-            href="/login"
-            className="px-8 py-3 rounded-full text-[#4a332e] font-medium hover:text-[#7b554d] transition"
-          >
+        {/* Login / Signup */}
+        <div className="mt-6">
+          <Link href="/login" className="text-[#b4457f] font-semibold">
             Login / Signup
           </Link>
         </div>
-      </section>
 
-      {/* Latest Portraits Section */}
-      <section className="px-6 pb-20">
-        <h2 className="text-2xl font-semibold text-[#4a332e] mb-4">
-          Latest Portraits
-        </h2>
+        {/* Latest Artworks Section */}
+        <h2 className="text-3xl font-semibold mt-14 mb-4">Latest Portraits</h2>
 
-        <div className="text-[#7a6d66] italic">
-          No artworks yet.
-        </div>
-      </section>
+        {artworks.length === 0 ? (
+          <p className="text-gray-600">No artworks yet.</p>
+        ) : (
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 mt-4">
+            {artworks.map((art) => (
+              <div key={art.id} className="bg-white p-2 rounded shadow">
+                <img
+                  src={supabase.storage.from("artworks").getPublicUrl(art.storage_path).data.publicUrl}
+                  alt="Artwork"
+                  className="rounded"
+                />
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
+}
+
+export async function getServerSideProps() {
+  const { data } = await supabase
+    .from("artworks")
+    .select("*")
+    .eq("approved", true)
+    .order("created_at", { ascending: false })
+    .limit(6);
+
+  return {
+    props: {
+      artworks: data || [],
+    },
+  };
 }
