@@ -11,26 +11,34 @@ export default function Signup() {
   const [msg, setMsg] = useState("");
 
   const signupEmail = async () => {
-    setMsg("");
-    const { data, error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: { data: { full_name: name } }
-    });
-    if (error) return setMsg(error.message);
-    // upsert profile (safe)
-    if (data?.user?.id) {
-      await supabase.from("profiles").upsert({
-        id: data.user.id,
-        auth_id: data.user.id,
-        name,
-        email,
-        role: "customer"
-      });
-    }
-    router.push("/");
-  };
+  setMsg("sending...");
 
+  const { data, error } = await supabase.auth.signUp({
+    email: email,
+    password: password,
+    options: { data: { full_name: name } }
+  });
+
+  // SHOW RAW ERROR ON SCREEN
+  if (error) {
+    setMsg("RAW ERROR → " + error.message);
+    return;
+  }
+
+  // If no signup error, show the raw data to confirm
+  setMsg("SIGNUP OK → " + JSON.stringify(data));
+
+  // Insert into profiles
+  await supabase.from("profiles").upsert({
+    id: data.user.id,
+    auth_id: data.user.id,
+    name,
+    email,
+    role: "customer"
+  });
+
+  router.push("/");
+};
   const signupGoogle = async () => {
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
