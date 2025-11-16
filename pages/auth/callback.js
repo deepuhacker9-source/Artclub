@@ -7,13 +7,19 @@ export default function Callback() {
 
   useEffect(() => {
     const finish = async () => {
-      // Get session after redirect
-      await supabase.auth.getSession();
-      router.push("/"); // send user home
+      try {
+        // ensures session is available on client after redirect
+        await supabase.auth.getSession();
+      } catch (err) {
+        console.error("callback getSession error", err);
+      } finally {
+        // landing page after login (you can change to "/" or "/profile")
+        router.replace("/dashboard");
+      }
     };
 
     finish();
-  }, []);
+  }, [router]);
 
-  return <p>Finishing login...</p>;
+  return <p style={{ padding: 24 }}>Finishing login…</p>;
 }
