@@ -11,40 +11,48 @@ export default function Signup() {
   const [msg, setMsg] = useState("");
 
   const signupEmail = async () => {
-  setMsg("sending...");
+    setMsg("");
+    const emailTrim = email.trim().toLowerCase();
 
-  const { data, error } = await supabase.auth.signUp({
-    email: email,
-    password: password,
-    options: { data: { full_name: name } }
-  });
+    const { data, error } = await supabase.auth.signUp({
+      email: emailTrim,
+      password,
+      options: { data: { full_name: name } }
+    });
 
-  // SHOW RAW ERROR ON SCREEN
-  if (error) {
-    setMsg("RAW ERROR → " + error.message);
-    return;
-  }
+    if (error) {
+      setMsg("RAW ERROR → " + error.message);
+      return;
+    }
 
-  // If no signup error, show the raw data to confirm
-  setMsg("SIGNUP OK → " + JSON.stringify(data));
+    // upsert profile (safe)
+    if (data?.user?.id) {
+      const { error: upsertErr } = await supabase
+        .from("profiles")
+        .upsert({
+          id: data.user.id,
+          auth_id: data.user.id,
+          name,
+          email: emailTrim,
+          role: "customer"
+        });
 
-  // Insert into profiles
-  await supabase.from("profiles").upsert({
-    id: data.user.id,
-    auth_id: data.user.id,
-    name,
-    email,
-    role: "customer"
-  });
+      if (upsertErr) {
+        setMsg("Database error saving new user → " + upsertErr.message);
+        return;
+      }
+    }
 
-  router.push("/");
-};
+    router.push("/");
+  };
+
   const signupGoogle = async () => {
+    setMsg("");
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: { redirectTo: process.env.NEXT_PUBLIC_APP_URL }
     });
-    if (error) setMsg(error.message);
+    if (error) setMsg("RAW ERROR → " + error.message);
   };
 
   return (
