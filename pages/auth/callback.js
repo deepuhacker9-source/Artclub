@@ -6,20 +6,30 @@ export default function Callback() {
   const router = useRouter();
 
   useEffect(() => {
-    const finish = async () => {
+    const completeLogin = async () => {
       try {
-        // ensures session is available on client after redirect
-        await supabase.auth.getSession();
+        // Force Supabase to read the session from URL hash
+        const { data } = await supabase.auth.getSession();
+
+        // If session exists → redirect to dashboard
+        if (data?.session) {
+          router.replace("/dashboard");
+        } else {
+          // No session yet → try again after small delay
+          setTimeout(completeLogin, 400);
+        }
       } catch (err) {
-        console.error("callback getSession error", err);
-      } finally {
-        // landing page after login (you can change to "/" or "/profile")
-        router.replace("/dashboard");
+        console.error("Callback error:", err);
+        router.replace("/login");
       }
     };
 
-    finish();
+    completeLogin();
   }, [router]);
 
-  return <p style={{ padding: 24 }}>Finishing login…</p>;
+  return (
+    <div style={{ padding: "2rem" }}>
+      <p>Finishing sign-in…</p>
+    </div>
+  );
 }
