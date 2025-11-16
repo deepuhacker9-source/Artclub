@@ -24,9 +24,10 @@ export default function Signup() {
     });
 
     if (error) {
-      setMsg("RAW ERROR → " + error.message);
-      return;
-    }
+  console.log("SIGNUP ERROR:", error);
+  setMsg("SIGNUP ERROR → " + JSON.stringify(error, null, 2));
+  return;
+}
 
     if (data?.user?.id) {
       const { error: upsertErr } = await supabase
@@ -40,7 +41,8 @@ export default function Signup() {
         });
 
       if (upsertErr) {
-  alert("UPSERT ERROR → " + JSON.stringify(upsertErr, null, 2));
+  console.log("UPSERT ERROR:", upsertErr);
+  setMsg("UPSERT ERROR → " + JSON.stringify(upsertErr, null, 2));
   return;
 }
     }
