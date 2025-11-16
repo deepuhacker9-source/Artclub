@@ -40,9 +40,7 @@ export default function Signup() {
         });
 
       if (upsertErr) {
-  console.log("UPSERT ERROR →", upsertErr);
-  alert(JSON.stringify(upsertErr, null, 2)); 
-  setMsg("Database error saving new user → " + upsertErr.message);
+  alert("UPSERT ERROR → " + JSON.stringify(upsertErr, null, 2));
   return;
 }
     }
