@@ -6,30 +6,37 @@ export default function Callback() {
   const router = useRouter();
 
   useEffect(() => {
-    const completeLogin = async () => {
-      try {
-        // Force Supabase to read the session from URL hash
-        const { data } = await supabase.auth.getSession();
+    const run = async () => {
+      if (!router.isReady) return;
 
-        // If session exists → redirect to dashboard
-        if (data?.session) {
-          router.replace("/dashboard");
-        } else {
-          // No session yet → try again after small delay
-          setTimeout(completeLogin, 400);
-        }
-      } catch (err) {
-        console.error("Callback error:", err);
+      const { code, error } = router.query;
+
+      if (error) {
+        console.error("Google OAuth error:", error);
         router.replace("/login");
+        return;
       }
+
+      if (!code) return;
+
+      // PKCE step — exchange ?code for session
+      const { data, error: exchangeError } =
+        await supabase.auth.exchangeCodeForSession(code);
+
+      if (exchangeError) {
+        console.error("Failed exchanging code:", exchangeError);
+        router.replace("/login");
+        return;
+      }
+
+      // SUCCESS — session stored automatically
+      router.replace("/dashboard");
     };
 
-    completeLogin();
+    run();
   }, [router]);
 
   return (
-    <div style={{ padding: "2rem" }}>
-      <p>Finishing sign-in…</p>
-    </div>
+    <p style={{ padding: 20 }}>Signing in…</p>
   );
 }
