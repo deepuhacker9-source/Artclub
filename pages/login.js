@@ -4,13 +4,15 @@ import { supabase } from "../lib/supabaseClient";
 export default function Login() {
   const loginWithGoogle = async () => {
     const { error } = await supabase.auth.signInWithOAuth({
-  provider: "google"
-});
+      provider: "google"
+      // DO NOT set `options.redirectTo` here — using single-callback flow
+    });
 
     if (error) {
-      alert("Google login error: " + error.message);
-      console.error("Google login error", error);
+      console.error("Google login error:", error);
+      alert("Login error: " + (error.message || error.code));
     }
+    // The browser will be redirected to Google immediately; nothing else needed here
   };
 
   return (
