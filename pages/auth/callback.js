@@ -2,41 +2,43 @@ import { useEffect } from "react";
 import { useRouter } from "next/router";
 import { supabase } from "../../lib/supabaseClient";
 
-export default function Callback() {
+export default function AuthCallbackPage() {
   const router = useRouter();
 
   useEffect(() => {
-    const run = async () => {
-      if (!router.isReady) return;
+    async function handle() {
+      try {
+        // Supabase v2 -> exchange code for session; older lib variations exist
+        // Try both methods safely: first attempt exchangeCodeForSession if available
+        if (supabase.auth.exchangeCodeForSession) {
+          const urlParams = new URL(window.location.href).searchParams;
+          const error = urlParams.get("error");
+          if (error) {
+            console.error("OAuth error in URL:", error, urlParams.get("error_description"));
+            router.replace("/login");
+            return;
+          }
 
-      const { code, error } = router.query;
+          // This will set the client session
+          await supabase.auth.exchangeCodeForSession(window.location.href);
+        } else if (supabase.auth.getSessionFromUrl) {
+          // fallback
+          await supabase.auth.getSessionFromUrl({ storeSession: true });
+        } else {
+          console.warn("No compatible supabase auth exchange function found.");
+        }
 
-      if (error) {
-        console.error("Google OAuth error:", error);
-        router.replace("/login");
-        return;
+        // session now set in client — redirect to dashboard or where you want
+        router.replace("/dashboard");
+      } catch (err) {
+        console.error("Auth callback exchange failed:", err);
+        router.replace("/login?error=auth_exchange_failed");
       }
+    }
 
-      if (!code) return;
-
-      // PKCE step — exchange ?code for session
-      const { data, error: exchangeError } =
-        await supabase.auth.exchangeCodeForSession(code);
-
-      if (exchangeError) {
-        console.error("Failed exchanging code:", exchangeError);
-        router.replace("/login");
-        return;
-      }
-
-      // SUCCESS — session stored automatically
-      router.replace("/dashboard");
-    };
-
-    run();
+    // only run in browser
+    if (typeof window !== "undefined") handle();
   }, [router]);
 
-  return (
-    <p style={{ padding: 20 }}>Signing in…</p>
-  );
+  return <div className="min-h-screen flex items-center justify-center">Processing sign in…</div>;
 }
