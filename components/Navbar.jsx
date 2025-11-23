@@ -3,39 +3,47 @@ import { useUser } from "../lib/UserContext";
 import { supabase } from "../lib/supabaseClient";
 
 export default function Navbar() {
-  const { user, loading } = useUser();
+  const { profile, loading } = useUser();
 
-  const handleSignOut = async () => {
+  const logout = async () => {
     await supabase.auth.signOut();
-    // optional: you can redirect client after signOut
-    if (typeof window !== "undefined") window.location.href = "/";
+    window.location.href = "/";  // hard redirect (cleaner on mobile)
   };
 
   return (
     <nav className="bg-white shadow sticky top-0 z-20">
       <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
+        
         <Link href="/">
           <span className="font-bold text-xl text-pink-700">Art Club</span>
         </Link>
 
         <div className="flex gap-4 font-medium text-gray-700 items-center">
+
           <Link href="/request">Request</Link>
           <Link href="/track">Track</Link>
           <Link href="/artists">Artists</Link>
 
-          {!loading && (
-            user ? (
-              <>
-                <Link href="/dashboard">Profile</Link>
-                <button onClick={handleSignOut} className="px-3 py-1 bg-pink-700 text-white rounded">
-                  Logout
-                </button>
-              </>
-            ) : (
-              <Link href="/login" className="px-3 py-1 bg-pink-700 text-white rounded">
-                Login
+          {!loading && !profile && (
+            <Link href="/login" className="text-pink-700 font-semibold">Login</Link>
+          )}
+
+          {!loading && profile && (
+            <>
+              <Link href="/dashboard">
+                <span className="font-semibold text-pink-700">
+                  {profile.name || "Profile"}
+                </span>
               </Link>
-            )
+
+              <button
+                onClick={logout}
+                className="px-3 py-1 rounded text-white"
+                style={{ background: "#C56A47" }}
+              >
+                Logout
+              </button>
+            </>
           )}
         </div>
       </div>
