@@ -1,94 +1,135 @@
-import { useEffect, useState } from "react";
+import { useUser } from "../lib/UserContext";
 import { supabase } from "../lib/supabaseClient";
-import Navbar from "../components/Navbar";
+import { useState } from "react";
 
 export default function Profile() {
-  const [loading, setLoading] = useState(true);
-  const [profile, setProfile] = useState(null);
+  const { profile, loading } = useUser();
+  const [editing, setEditing] = useState(false);
+  const [form, setForm] = useState(profile || {});
+  const [saving, setSaving] = useState(false);
 
-  useEffect(() => {
-    fetchProfile();
-  }, []);
+  if (loading || !profile) return <p className="p-6">Loading...</p>;
 
-  const fetchProfile = async () => {
-    const { data: { user } } = await supabase.auth.getUser();
+  const saveProfile = async () => {
+    setSaving(true);
 
-    if (!user) {
-      window.location.href = "/login";
-      return;
-    }
-
-    let { data, error } = await supabase
+    const { error } = await supabase
       .from("profiles")
-      .select("*")
-      .eq("id", user.id)
-      .single();
+      .update({
+        name: form.name,
+        bio: form.bio,
+        avatar_path: form.avatar_path
+      })
+      .eq("id", profile.id);
 
-    if (error) console.log(error);
-    setProfile(data);
-    setLoading(false);
+    setSaving(false);
+    if (!error) {
+      setEditing(false);
+      window.location.reload();
+    }
   };
 
-  if (loading) return <div>Loading...</div>;
-
   return (
-    <>
-      <Navbar />
+    <div className="min-h-screen bg-[#EFE4D9] p-4">
+      <div className="max-w-2xl mx-auto bg-white shadow-lg rounded-xl overflow-hidden">
 
-      <div className="max-w-2xl mx-auto mt-10 p-6 bg-white shadow rounded-lg">
-        <h1 className="text-3xl font-bold mb-4">Your Profile</h1>
-
-        {/* Avatar */}
-        <div className="mb-4">
-          <img
-            src={profile.avatar_path || "/default-avatar.png"}
-            className="w-24 h-24 rounded-full border"
-          />
+        {/* HEADER */}
+        <div className="h-40 bg-gradient-to-r from-pink-300 to-orange-300 relative">
+          <div className="absolute -bottom-12 left-6">
+            <img
+              src={profile.avatar_path || profile.raw_user_meta_data?.avatar_url}
+              alt="avatar"
+              className="w-24 h-24 rounded-full border-4 border-white shadow-md object-cover"
+            />
+          </div>
         </div>
 
-        {/* Name */}
-        <div className="mb-2">
-          <span className="font-semibold">Name: </span>
-          {profile.name}
-        </div>
+        <div className="pt-16 px-6 pb-6">
 
-        {/* Email */}
-        <div className="mb-2">
-          <span className="font-semibold">Email: </span>
-          {profile.email}
-        </div>
+          {/* NAME */}
+          {!editing ? (
+            <h2 className="text-2xl font-bold text-gray-900">{profile.name}</h2>
+          ) : (
+            <input
+              className="border p-2 rounded w-full mb-3"
+              value={form.name}
+              onChange={(e) => setForm({ ...form, name: e.target.value })}
+            />
+          )}
 
-        {/* Role */}
-        <div className="mb-2">
-          <span className="font-semibold">Role: </span>
-          {profile.role}
-        </div>
+          {/* ROLE */}
+          <p className="text-sm text-gray-600 mt-1">
+            {profile.role?.toUpperCase()}
+          </p>
 
-        {/* Bio */}
-        <div className="mb-2">
-          <span className="font-semibold">Bio: </span>
-          {profile.bio || "No bio yet."}
-        </div>
+          {/* BIO */}
+          <div className="mt-6">
+            <h3 className="font-semibold text-gray-800">Bio</h3>
 
-        {/* Rating */}
-        <div className="mb-2">
-          <span className="font-semibold">Rating: </span>
-          {profile.avg_rating}
-        </div>
+            {!editing ? (
+              <p className="text-gray-700 mt-1">
+                {profile.bio || "No bio added yet."}
+              </p>
+            ) : (
+              <textarea
+                className="border p-2 rounded w-full"
+                rows="3"
+                value={form.bio || ""}
+                onChange={(e) => setForm({ ...form, bio: e.target.value })}
+              ></textarea>
+            )}
+          </div>
 
-        {/* Verified */}
-        <div className="mb-2">
-          <span className="font-semibold">Verified: </span>
-          {profile.verified ? "Yes" : "No"}
-        </div>
+          {/* RATING */}
+          <div className="mt-6 flex gap-4">
+            <div>
+              <h3 className="font-semibold text-gray-800">Rating</h3>
+              <p className="text-gray-700">{profile.avg_rating}</p>
+            </div>
 
-        {/* Account Created */}
-        <div className="mb-2">
-          <span className="font-semibold">Joined: </span>
-          {new Date(profile.created_at).toLocaleDateString()}
-        </div>
+            <div>
+              <h3 className="font-semibold text-gray-800">Verified</h3>
+              <p className="text-gray-700">
+                {profile.verified ? "Yes" : "Not Verified"}
+              </p>
+            </div>
+          </div>
 
+          {/* JOIN DATE */}
+          <p className="text-xs text-gray-500 mt-6">
+            Joined: {new Date(profile.created_at).toLocaleDateString()}
+          </p>
+
+          {/* BUTTONS */}
+          <div className="mt-8 flex gap-4">
+            {!editing ? (
+              <button
+                className="px-4 py-2 bg-pink-600 text-white rounded-lg shadow hover:bg-pink-700"
+                onClick={() => setEditing(true)}
+              >
+                Edit Profile
+              </button>
+            ) : (
+              <>
+                <button
+                  className="px-4 py-2 bg-green-600 text-white rounded-lg shadow hover:bg-green-700"
+                  onClick={saveProfile}
+                  disabled={saving}
+                >
+                  {saving ? "Saving..." : "Save"}
+                </button>
+
+                <button
+                  className="px-4 py-2 bg-gray-400 text-white rounded-lg shadow hover:bg-gray-500"
+                  onClick={() => setEditing(false)}
+                >
+                  Cancel
+                </button>
+              </>
+            )}
+          </div>
+        </div>
       </div>
-    </>
+    </div>
   );
 }
