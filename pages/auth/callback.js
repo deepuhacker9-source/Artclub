@@ -6,27 +6,41 @@ export default function Callback() {
   const router = useRouter();
 
   useEffect(() => {
-    async function finish() {
-      try {
-        if (supabase.auth.exchangeCodeForSession) {
-          await supabase.auth.exchangeCodeForSession(window.location.href);
-        } else {
-          await supabase.auth.getSessionFromUrl({ storeSession: true });
-        }
+    const completeLogin = async () => {
+      // Wait for Supabase session to finish creating user
+      let tries = 0;
 
-        router.replace("/dashboard");
-      } catch (e) {
-        console.error("OAuth callback error:", e);
-        router.replace("/login?error=auth_failed");
+      while (tries < 10) {
+        const { data } = await supabase.auth.getSession();
+        if (data.session) break;
+
+        // wait 300ms before trying again
+        await new Promise((r) => setTimeout(r, 300));
+        tries++;
       }
-    }
 
-    finish();
+      const { data } = await supabase.auth.getSession();
+
+      if (!data?.session) {
+        router.replace("/login?error=session");
+        return;
+      }
+
+      // SUCCESS: Redirect smoothly
+      router.replace("/dashboard");
+    };
+
+    completeLogin();
   }, []);
 
   return (
-    <div className="min-h-screen flex items-center justify-center">
-      Setting up your account...
+    <div style={{
+      padding: "40px",
+      fontSize: "20px",
+      fontWeight: "600",
+      textAlign: "center"
+    }}>
+      Finishing login…
     </div>
   );
 }
