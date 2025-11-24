@@ -1,47 +1,39 @@
+// pages/auth/callback.js
+
 import { useEffect } from "react";
-import { useRouter } from "next/router";
 import { supabase } from "../../lib/supabaseClient";
 
 export default function Callback() {
-  const router = useRouter();
 
+  // 🔥 Fix the broken "#" hash problem
   useEffect(() => {
-    const completeLogin = async () => {
-      // Wait for Supabase session to finish creating user
-      let tries = 0;
+    if (window.location.hash === "#") {
+      window.location.replace(window.location.pathname);
+    }
+  }, []);
 
-      while (tries < 10) {
-        const { data } = await supabase.auth.getSession();
-        if (data.session) break;
+  // 🔥 Finish Supabase login and redirect
+  useEffect(() => {
+    const finishLogin = async () => {
+      // Force Supabase to resolve the session
+      await supabase.auth.getSession();
 
-        // wait 300ms before trying again
-        await new Promise((r) => setTimeout(r, 300));
-        tries++;
-      }
-
-      const { data } = await supabase.auth.getSession();
-
-      if (!data?.session) {
-        router.replace("/login?error=session");
-        return;
-      }
-
-      // SUCCESS: Redirect smoothly
-      router.replace("/dashboard");
+      // Hard redirect to dashboard (mobile safe)
+      window.location.href = "/dashboard";
     };
 
-    completeLogin();
-   useEffect(() => {
-  console.log("Callback JS is executing…");
-  // your login code...
-}, []);
+    finishLogin();
+  }, []);
 
   return (
     <div style={{
-      padding: "40px",
-      fontSize: "20px",
-      fontWeight: "600",
-      textAlign: "center"
+      minHeight: "100vh",
+      display: "flex",
+      justifyContent: "center",
+      alignItems: "center",
+      fontSize: "26px",
+      fontWeight: "700",
+      color: "#6A4330"
     }}>
       Finishing login…
     </div>
