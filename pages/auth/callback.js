@@ -31,7 +31,10 @@ export default function Callback() {
     };
 
     completeLogin();
-  }, []);
+   useEffect(() => {
+  console.log("Callback JS is executing…");
+  // your login code...
+}, []);
 
   return (
     <div style={{
