@@ -1,12 +1,9 @@
-"use client";
 import Link from "next/link";
-import { useState } from "react";
 import { useUser } from "../lib/UserContext";
 import { supabase } from "../lib/supabaseClient";
 
 export default function Navbar() {
   const { profile, loading } = useUser();
-  const [menuOpen, setMenuOpen] = useState(false);
 
   const logout = async () => {
     await supabase.auth.signOut();
@@ -14,123 +11,41 @@ export default function Navbar() {
   };
 
   return (
-    <>
-      {/* NAVBAR */}
-      <nav className="
-        fixed top-0 left-0 w-full z-50
-        backdrop-blur-lg bg-white/60
-        border-b border-white/40
-      ">
-        <div className="
-          max-w-5xl mx-auto px-4 h-14
-          flex items-center justify-between
-        ">
-          
-          {/* LOGO */}
-          <Link href="/" className="text-xl font-bold text-pink-700 tracking-wide">
-            Art Club
-          </Link>
+    <nav className="backdrop-blur-md bg-white/60 shadow-sm sticky top-0 z-20">
+      <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
 
-          {/* MOBILE MENU BUTTON */}
-          <button 
-            className="md:hidden text-3xl font-bold text-gray-700"
-            onClick={() => setMenuOpen(true)}
-          >
-            ☰
-          </button>
+        <Link href="/" className="font-extrabold text-xl text-pink-700 tracking-tight">
+          Art Club
+        </Link>
 
-          {/* DESKTOP MENU */}
-          <div className="hidden md:flex gap-8 text-gray-800 font-semibold items-center">
+        <div className="flex gap-4 items-center text-gray-700 font-medium">
 
-            <Link href="/request">Request</Link>
-            <Link href="/track">Track</Link>
-            <Link href="/artists">Artists</Link>
+          <Link href="/request" className="hidden sm:block">Request</Link>
+          <Link href="/track" className="hidden sm:block">Track</Link>
+          <Link href="/artists" className="hidden sm:block">Artists</Link>
 
-            {!loading && !profile && (
-              <Link href="/login" className="text-pink-700 font-bold">
-                Login
+          {!loading && !profile && (
+            <Link href="/login" className="text-pink-700 font-semibold">
+              Login
+            </Link>
+          )}
+
+          {!loading && profile && (
+            <>
+              <Link href="/profile" className="font-semibold text-pink-700">
+                {profile.name?.split(" ")[0] || "Profile"}
               </Link>
-            )}
 
-            {!loading && profile && (
-              <>
-                <Link href="/profile" className="text-pink-700 font-bold">
-                  {profile.name}
-                </Link>
-
-                <button
-                  onClick={logout}
-                  className="px-4 py-1 rounded text-white font-semibold"
-                  style={{ background: "#C56A47" }}
-                >
-                  Logout
-                </button>
-              </>
-            )}
-
-          </div>
-
-        </div>
-      </nav>
-
-      {/* MOBILE FULL-SCREEN DRAWER */}
-      {menuOpen && (
-        <div className="
-          fixed inset-0 bg-white/95 backdrop-blur-xl
-          z-50 flex flex-col text-lg font-semibold
-          animate-fadeIn
-        ">
-
-          {/* Close button */}
-          <div className="flex justify-end p-4">
-            <button
-              className="text-4xl font-bold text-gray-700"
-              onClick={() => setMenuOpen(false)}
-            >
-              ×
-            </button>
-          </div>
-
-          {/* Menu items */}
-          <div className="flex flex-col gap-6 px-6 mt-4 text-gray-800">
-
-            <Link href="/request" onClick={() => setMenuOpen(false)}>Request</Link>
-            <Link href="/track" onClick={() => setMenuOpen(false)}>Track</Link>
-            <Link href="/artists" onClick={() => setMenuOpen(false)}>Artists</Link>
-
-            {!loading && !profile && (
-              <Link 
-                href="/login"
-                className="text-pink-700 font-bold"
-                onClick={() => setMenuOpen(false)}
+              <button
+                onClick={logout}
+                className="px-3 py-1 rounded-lg text-white bg-gradient-to-r from-pink-600 to-orange-500 shadow-sm"
               >
-                Login
-              </Link>
-            )}
-
-            {!loading && profile && (
-              <>
-                <Link 
-                  href="/profile"
-                  onClick={() => setMenuOpen(false)}
-                  className="text-pink-700 font-bold"
-                >
-                  {profile.name}
-                </Link>
-
-                <button
-                  onClick={logout}
-                  className="mt-2 px-4 py-3 rounded text-white font-bold text-left"
-                  style={{ background: "#C56A47" }}
-                >
-                  Logout
-                </button>
-              </>
-            )}
-
-          </div>
+                Logout
+              </button>
+            </>
+          )}
         </div>
-      )}
-    </>
+      </div>
+    </nav>
   );
 }
