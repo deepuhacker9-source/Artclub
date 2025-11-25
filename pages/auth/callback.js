@@ -1,28 +1,39 @@
-// pages/auth/callback.js
-
 import { useEffect } from "react";
 import { supabase } from "../../lib/supabaseClient";
 
 export default function Callback() {
 
-  // 🔥 Fix the broken "#" hash problem
   useEffect(() => {
-    if (window.location.hash === "#") {
-      window.location.replace(window.location.pathname);
-    }
-  }, []);
+    const finish = async () => {
 
-  // 🔥 Finish Supabase login and redirect
-  useEffect(() => {
-    const finishLogin = async () => {
-      // Force Supabase to resolve the session
-      await supabase.auth.getSession();
+      // Fix mobile "#"
+      if (window.location.hash === "#") {
+        window.location.replace(window.location.pathname);
+        return;
+      }
 
-      // Hard redirect to dashboard (mobile safe)
+      // Wait for Supabase to finish auth
+      let tries = 0;
+      while (tries < 15) {
+        const { data } = await supabase.auth.getSession();
+        if (data?.session) break;
+
+        await new Promise((r) => setTimeout(r, 300));
+        tries++;
+      }
+
+      // If still no session → fail gracefully
+      const { data } = await supabase.auth.getSession();
+      if (!data?.session) {
+        window.location.href = "/login?error=session_not_ready";
+        return;
+      }
+
+      // SUCCESS
       window.location.href = "/dashboard";
     };
 
-    finishLogin();
+    finish();
   }, []);
 
   return (
