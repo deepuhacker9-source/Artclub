@@ -1,9 +1,27 @@
 import Link from "next/link";
 import { useUser } from "../lib/UserContext";
 import { supabase } from "../lib/supabaseClient";
+import dynamic from "next/dynamic";
+import { useEffect, useState } from "react";
 
-export default function Navbar() {
+function NavbarComponent() {
   const { profile, loading } = useUser();
+  const [mounted, setMounted] = useState(false);
+
+  // Prevent hydration mismatch
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  if (!mounted) {
+    return (
+      <nav className="backdrop-blur-md bg-white/60 shadow-sm sticky top-0 z-20">
+        <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
+          <span className="font-extrabold text-xl text-pink-700">Art Club</span>
+        </div>
+      </nav>
+    );
+  }
 
   const logout = async () => {
     await supabase.auth.signOut();
@@ -49,3 +67,8 @@ export default function Navbar() {
     </nav>
   );
 }
+
+// Disable SSR for the entire navbar
+export default dynamic(() => Promise.resolve(NavbarComponent), {
+  ssr: false,
+});
